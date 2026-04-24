@@ -1,0 +1,7 @@
+# requirements.txt
+# Yeh file batati hai ke kaunsi libraries install karni hain
+# Run: pip install -r requirements.txt
+# Note: tkinter Python ke saath aata hai, alag install nahi karna
+
+# No external libraries needed for core functionality
+# tkinter is built-in with Python
