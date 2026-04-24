@@ -391,3 +391,224 @@ class SudokuApp:
 
         # Grid lines dobara draw karo (cells ke upar)
         self._draw_grid_lines()
+
+
+    # ─────────────────────────────────────────
+    #  EVENT HANDLERS
+    # ─────────────────────────────────────────
+
+    def _on_cell_click(self, event):
+        """Mouse click — cell select karo."""
+        if self.current_grid is None:
+            return
+
+        col = event.x // 50
+        row = event.y // 50
+
+        if 0 <= row < 9 and 0 <= col < 9:
+            # Sirf empty ya user-filled cells select ho sakti hain
+            if self.original_grid[row][col] == 0:
+                self.selected_cell = (row, col)
+                self.wrong_cells.discard((row, col))
+                self._draw_board()
+
+
+    def _on_key_press(self, event):
+        """Keyboard press — selected cell mein number daalo."""
+        if self.selected_cell is None:
+            return
+
+        row, col = self.selected_cell
+
+        # Number 1-9 accept karo
+        if event.char in "123456789":
+            num = int(event.char)
+            self.current_grid[row][col] = num
+            self.user_cells.add((row, col))
+            self.hint_cells.discard((row, col))
+            self.wrong_cells.discard((row, col))
+            self._draw_board()
+
+        # Delete/Backspace se clear karo
+        elif event.keysym in ("Delete", "BackSpace"):
+            self.current_grid[row][col] = 0
+            self.user_cells.discard((row, col))
+            self.wrong_cells.discard((row, col))
+            self._draw_board()
+
+
+    def _on_difficulty_change(self):
+        """Difficulty change hone par puzzle number 1 par reset karo."""
+        self.puzzle_var.set("1")
+
+
+    # ─────────────────────────────────────────
+    #  MAIN ACTIONS
+    # ─────────────────────────────────────────
+
+    def load_puzzle(self):
+        """
+        Selected difficulty aur puzzle number se puzzle load karo.
+        Board reset hota hai fresh state mein.
+        """
+        diff   = self.difficulty_var.get()
+        p_num  = int(self.puzzle_var.get())
+
+        self.current_grid  = get_puzzle(diff, p_num)
+        self.original_grid = get_puzzle(diff, p_num)
+
+        # State reset karo
+        self.selected_cell = None
+        self.hint_cells    = set()
+        self.user_cells    = set()
+        self.wrong_cells   = set()
+
+        self.time_label.config(text="—")
+        self.status_label.config(
+            text=f"Loaded: {diff.capitalize()} Puzzle #{p_num}  |  Select a cell and type a number.",
+            fg=LABEL_COLOR
+        )
+
+        self._draw_board()
+
+
+    def solve_puzzle(self):
+        """
+        Selected algorithm se puzzle solve karo.
+        Solution board par show karo aur time display karo.
+        """
+        if self.current_grid is None:
+            messagebox.showwarning("No Puzzle", "Pehle puzzle load karo!")
+            return
+
+        algo = self.algorithm_var.get()
+        self.status_label.config(text="Solving...", fg=TEXT_ACCENT)
+        self.root.update()
+
+        # Algorithm call karo
+        if algo == "ac3":
+            solution, time_taken = ac3(self.original_grid)
+            algo_name = "AC-3"
+        else:
+            solution, time_taken = backtracking(self.original_grid)
+            algo_name = "Backtracking"
+
+        if solution:
+            self.current_grid = solution
+
+            # Sirf user/hint cells track karo (given wale already CELL_GIVEN hain)
+            for r in range(9):
+                for c in range(9):
+                    if self.original_grid[r][c] == 0:
+                        self.user_cells.add((r, c))
+
+            self.hint_cells   = set()
+            self.wrong_cells  = set()
+            self.selected_cell = None
+
+            self.time_label.config(text=f"{time_taken:.6f}s")
+            self.status_label.config(
+                text=f"✓ Solved with {algo_name} in {time_taken:.6f} seconds!",
+                fg=TIME_COLOR
+            )
+        else:
+            self.status_label.config(
+                text="✗ No solution found for this puzzle.",
+                fg=TEXT_WRONG
+            )
+
+        self._draw_board()
+
+
+    def give_hint(self):
+        """
+        Ek hint do — ek empty cell ki correct value reveal karo.
+        Hint cells green color mein show hoti hain.
+        """
+        if self.current_grid is None:
+            messagebox.showwarning("No Puzzle", "Pehle puzzle load karo!")
+            return
+
+        result = get_hint(self.current_grid, self.original_grid)
+
+        if result is None:
+            self.status_label.config(
+                text="Koi empty cell nahi — puzzle already complete!",
+                fg=TIME_COLOR
+            )
+            return
+
+        r, c, val = result
+        self.current_grid[r][c] = val
+        self.hint_cells.add((r, c))
+        self.user_cells.discard((r, c))
+        self.wrong_cells.discard((r, c))
+
+        self.status_label.config(
+            text=f"💡 Hint: Row {r+1}, Col {c+1} = {val}",
+            fg=TEXT_HINT
+        )
+        self._draw_board()
+
+
+    def check_board(self):
+        """
+        User ki entries check karo — galat cells red mein highlight karo.
+        """
+        if self.current_grid is None:
+            messagebox.showwarning("No Puzzle", "Pehle puzzle load karo!")
+            return
+
+        correct, wrong = is_board_correct(self.current_grid, self.original_grid)
+
+        self.wrong_cells = set(wrong)
+
+        if correct:
+            # Check karo ke board complete bhi hai
+            empty = any(
+                self.current_grid[r][c] == 0
+                for r in range(9) for c in range(9)
+            )
+            if empty:
+                self.status_label.config(
+                    text="✓ Sab filled cells correct hain! Abhi bhi empty cells hain.",
+                    fg=TIME_COLOR
+                )
+            else:
+                self.status_label.config(
+                    text="🎉 Congratulations! Puzzle perfectly solved!",
+                    fg=TIME_COLOR
+                )
+                messagebox.showinfo(
+                    "Solved!",
+                    "Masha Allah! Aapne puzzle correctly solve kar liya! 🎉"
+                )
+        else:
+            self.status_label.config(
+                text=f"✗ {len(wrong)} galat cell(s) mili hain — red mein highlight ki hain.",
+                fg=TEXT_WRONG
+            )
+
+        self._draw_board()
+
+
+    def reset_puzzle(self):
+        """
+        Board ko original state par wapas le jao.
+        User ki saari entries aur hints clear ho jati hain.
+        """
+        if self.original_grid is None:
+            return
+
+        self.current_grid  = copy.deepcopy(self.original_grid)
+        self.selected_cell = None
+        self.hint_cells    = set()
+        self.user_cells    = set()
+        self.wrong_cells   = set()
+
+        self.time_label.config(text="—")
+        self.status_label.config(
+            text="Board reset ho gaya. Fresh start!",
+            fg=LABEL_COLOR
+        )
+        self._draw_board()
