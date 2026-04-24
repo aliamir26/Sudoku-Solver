@@ -123,3 +123,140 @@ def revise(domains, xi, xj):
             revised = True
 
     return revised
+
+
+def ac3(grid):
+    """
+    AC-3 Algorithm — AIMA book se liya gaya.
+    Saare arcs ko queue mein daalo aur process karo.
+    Returns: (solved_grid or None, time_taken)
+    """
+    start_time = time.time()
+
+    # Deep copy taake original grid safe rahe
+    grid = copy.deepcopy(grid)
+
+    # Domains banao
+    domains = build_domains(grid)
+
+    # Queue mein saare arcs daalo (Xi, Xj) jahan Xi aur Xj peers hain
+    queue = deque()
+    for r in range(9):
+        for c in range(9):
+            for (pr, pc) in get_peers(r, c):
+                queue.append(((r, c), (pr, pc)))
+
+    # AC-3 main loop
+    while queue:
+        (xi, xj) = queue.popleft()
+
+        if revise(domains, xi, xj):
+            # Agar domain empty ho gaya: inconsistency!
+            if len(domains[xi]) == 0:
+                end_time = time.time()
+                return None, round(end_time - start_time, 6)
+
+            # Xi ke saare neighbors ko dobara queue mein daalo (Xj ko chod ke)
+            for neighbor in get_peers(xi[0], xi[1]):
+                if neighbor != xj:
+                    queue.append((neighbor, xi))
+
+    # Domains se grid banao
+    result_grid = [[0] * 9 for _ in range(9)]
+    for r in range(9):
+        for c in range(9):
+            if len(domains[(r, c)]) == 1:
+                result_grid[r][c] = list(domains[(r, c)])[0]
+            else:
+                # AC-3 akela solve nahi kar saka
+                # Backtracking se complete karo
+                result_grid[r][c] = grid[r][c]
+
+    # Agar abhi bhi empty cells hain toh backtracking se finish karo
+    if any(result_grid[r][c] == 0 for r in range(9) for c in range(9)):
+        result_grid = _backtrack(result_grid)
+
+    end_time = time.time()
+    time_taken = round(end_time - start_time, 6)
+
+    if result_grid:
+        return result_grid, time_taken
+    return None, time_taken
+
+
+# ─────────────────────────────────────────────
+#  BACKTRACKING ALGORITHM
+# ─────────────────────────────────────────────
+
+def _backtrack(grid):
+    """
+    Internal recursive backtracking function.
+    AIMA BACKTRACK function ka Python version.
+    """
+    # Base case: koi empty cell nahi = solution mil gaya
+    empty = find_empty(grid)
+    if empty is None:
+        return grid
+
+    row, col = empty
+
+    # 1 se 9 tak har value try karo
+    for num in range(1, 10):
+        if is_valid(grid, row, col, num):
+            grid[row][col] = num  # Value assign karo
+
+            result = _backtrack(grid)  # Recursion
+
+            if result is not None:
+                return result  # Solution mil gaya!
+
+            grid[row][col] = 0  # Backtrack — galat tha
+
+    return None  # Koi solution nahi mila is path mein
+
+
+def backtracking(grid):
+    """
+    Public Backtracking function — GUI yahi call karegi.
+    Returns: (solved_grid or None, time_taken)
+    """
+    start_time = time.time()
+
+    grid_copy = copy.deepcopy(grid)
+    result = _backtrack(grid_copy)
+
+    end_time = time.time()
+    time_taken = round(end_time - start_time, 6)
+
+    return result, time_taken
+
+
+# ─────────────────────────────────────────────
+#  QUICK TEST — direct run karo check ke liye
+# ─────────────────────────────────────────────
+
+if __name__ == "__main__":
+    # Simple test puzzle
+    test_grid = [
+        [5, 3, 0, 0, 7, 0, 0, 0, 0],
+        [6, 0, 0, 1, 9, 5, 0, 0, 0],
+        [0, 9, 8, 0, 0, 0, 0, 6, 0],
+        [8, 0, 0, 0, 6, 0, 0, 0, 3],
+        [4, 0, 0, 8, 0, 3, 0, 0, 1],
+        [7, 0, 0, 0, 2, 0, 0, 0, 6],
+        [0, 6, 0, 0, 0, 0, 2, 8, 0],
+        [0, 0, 0, 4, 1, 9, 0, 0, 5],
+        [0, 0, 0, 0, 8, 0, 0, 7, 9],
+    ]
+
+    print("Testing Backtracking...")
+    sol, t = backtracking(test_grid)
+    print(f"Solved in {t} seconds")
+    for row in sol:
+        print(row)
+
+    print("\nTesting AC-3...")
+    sol2, t2 = ac3(test_grid)
+    print(f"Solved in {t2} seconds")
+    for row in sol2:
+        print(row)
