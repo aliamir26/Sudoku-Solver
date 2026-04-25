@@ -9,16 +9,14 @@ A Python-based Sudoku solver implementing two classic **Constraint Satisfaction 
 
 ## 📸 Screenshots
 
-> **Note to Student:** After running the app, take screenshots and save them in a `/screenshots` folder. Then replace the placeholder text below with actual image links like `![Board](screenshots/main_board.png)`.
-
 | Main Board | Solving in Progress | Hint System |
 |:---:|:---:|:---:|
-| `[ screenshot: main_board.png ]` | `[ screenshot: solving.png ]` | `[ screenshot: hint.png ]` |
+| (screenshots/main_board.png) | (screenshots/solving.png) | (screenshots/hint.png) |
 | *Default view on launch* | *Algorithm solving live* | *Hint cell glowing green* |
 
 | Difficulty Selection | Time Display | Wrong Cell Check |
 |:---:|:---:|:---:|
-| `[ screenshot: difficulty.png ]` | `[ screenshot: timer.png ]` | `[ screenshot: wrong_cells.png ]` |
+| (screenshots/difficulty.png) | (screenshots/timer.png) | (screenshots/wrong_cells.png) |
 | *Easy / Medium / Hard radio buttons* | *Solve time to 6 decimal places* | *Red cells on wrong entries* |
 
 ---
