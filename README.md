@@ -348,9 +348,11 @@ This runs both algorithms on a test puzzle and prints the solution and time to t
 ---
 
 ## 👤 Author
+| | |
+|---|---|
 | **Name** | *(Ali Amir)* |
 | **Contact** | *(maliamir089@gmail.com)* |
-| **Institution** | NUCES Faisalabad-Chiniot Campus |
+| **Institution** | NUCES Faisalabad–Chiniot Campus |
 
 
 ---
