@@ -21,8 +21,6 @@ A Python-based Sudoku solver implementing two classic **Constraint Satisfaction 
 | `[ screenshot: difficulty.png ]` | `[ screenshot: timer.png ]` | `[ screenshot: wrong_cells.png ]` |
 | *Easy / Medium / Hard radio buttons* | *Solve time to 6 decimal places* | *Red cells on wrong entries* |
 
-> **How to take screenshots on Windows:** Press `Win + Shift + S`, draw around the app window, and save the image as PNG into your `/screenshots` folder.
-
 ---
 
 ## ✨ Features
@@ -122,7 +120,7 @@ While the queue is not empty:
 ## 🗂️ Project Structure
 
 ```
-sudoku-csp-al2002/
+sudoku-solver
 │
 ├── main.py              ← Entry point — run this to launch the app
 ├── datasets.py          ← All 12 Sudoku puzzles (Easy/Medium/Hard x 4)
@@ -194,28 +192,66 @@ sudoku-csp-al2002/
 
 ---
 
-## 🎮 UI Icons and Elements — Complete Guide
-
-| Element | Appearance | What It Means |
+## 🎮 UI Icons and Elements — Complete Guide 
+### Buttons
+ 
+| Button | Color | Action |
 |---|---|---|
-| `⚡ SOLVE` button | Purple button | Auto-solve the puzzle using the selected algorithm |
-| `💡 HINT` button | Green button | Reveal one correct value in one empty cell |
-| `✓ CHECK` button | Blue button | Validate all your manually entered numbers |
-| `↺ RESET` button | Red button | Clear your entries and restore the original puzzle |
-| `LOAD PUZZLE` button | Light purple button | Load the puzzle selected by difficulty and number |
-| **Purple highlighted cell** | Solid purple background | Currently selected cell — type your number here |
-| **Dark blue cell** | Dark background, white number | Pre-filled cell from the puzzle — cannot be edited |
-| **Slightly lighter cell** | Lighter background, blue number | Cell you filled in manually |
-| **Green cell** | Green background, green number | Hint cell — correct value revealed by the hint system |
-| **Red cell** | Red background, red number | Wrong cell — your entry does not match the solution |
-| **Thick purple grid lines** | Bold purple borders | Boundaries of the nine 3×3 boxes |
-| **Thin gray grid lines** | Subtle gray dividers | Individual cell borders within each box |
-| **`SOLVE TIME: —`** | Dash in the info panel | No solve has been run yet in this session |
-| **`SOLVE TIME: 0.000123s`** | Time in green text | Exact time taken by the algorithm in seconds |
-| **Status bar** | Text below the time | Real-time feedback — tells you exactly what just happened |
-| **Difficulty radio buttons** | Easy / Medium / Hard | Select the challenge level of the puzzle |
-| **Puzzle # radio buttons** | Puzzle 1 / 2 / 3 / 4 | Select which of the four puzzles to load |
-| **Algorithm radio buttons** | Backtracking / AC-3 | Choose which algorithm will solve the puzzle |
+| `⚡ SOLVE` | Red | Solves the puzzle with the selected algorithm |
+| `💡 HINT` | Green | Reveals one correct value in an empty cell |
+| `✓ CHECK` | Blue | Validates all manually entered numbers |
+| `↺ RESET` | Amber | Clears entries and restores the original puzzle |
+| `LOAD PUZZLE` | Red | Loads the puzzle chosen by the controls above |
+| `⚡ RUN BOTH & COMPARE` | Red (right panel) | Runs both algorithms and fills the comparison panel |
+ 
+### Cell Colors
+ 
+| Cell Appearance | Meaning |
+|---|---|
+| Dark background, white number | Given cell — provided by the puzzle, cannot be edited |
+| Slightly lighter background, blue number | Number you typed manually |
+| Dark green background, bright green number + green border | Hint cell — correct value just revealed |
+| Dark red background, red number + red border | Wrong cell — your entry does not match the solution |
+| Dark blue background + blue border | Currently selected cell — type here |
+| Dark red background + glowing red border | Cell being animated during solve or hint flash |
+ 
+### Grid Lines
+ 
+| Line | Appearance | Meaning |
+|---|---|---|
+| Thick red lines | Bold, appear every 3 cells | Boundaries of the nine 3×3 boxes |
+| Thin dark lines | Subtle, between individual cells | Cell dividers within each box |
+| Outer red border | 2px frame around the entire board | Board boundary |
+ 
+### Comparison Panel Elements
+ 
+| Element | Meaning |
+|---|---|
+| `—` in time field | Algorithm has not been run yet this session |
+| Red time value (Backtracking card) | Time taken by Backtracking on the current puzzle |
+| Green time value (AC-3 card) | Time taken by AC-3 on the current puzzle |
+| `🏆 FASTER: [name]` | Which algorithm finished first |
+| `Speed difference: 2.4×` | How many times faster the winner was |
+ 
+### Time Format
+ 
+The solver uses `time.perf_counter()` for high-precision measurement and auto-formats the result:
+ 
+| Duration | Format shown | Example |
+|---|---|---|
+| Under 1 millisecond | Microseconds | `445.0 μs` |
+| Under 1 second | Milliseconds | `31.911 ms` |
+| 1 second or more | Seconds | `4.9045 s` |
+ 
+### Status Bar
+ 
+The bar below the board updates after every action. Examples of what it shows:
+ 
+- `Loaded: Easy — Puzzle #1 | Click a cell and type to play`
+- `💡 Hint revealed → Row 3, Col 5 = 7`
+- `✓ Solved with Backtracking | Time: 2.341 ms`
+- `✗ 2 incorrect cell(s) found — highlighted in red`
+- `Comparison done | BT: 6.472 ms | AC-3: 55.111 ms`
 
 ---
 
@@ -241,8 +277,8 @@ If you see `Tkinter is ready!` — perfect. If not, reinstall Python and make su
 
 **If using Git or GitHub Desktop:**
 ```bash
-git clone https://github.com/YourUsername/sudoku-csp-al2002.git
-cd sudoku-csp-al2002
+git clone https://github.com/aliamir26/sudoku-solver.git
+cd sudoku-solver
 ```
 
 **Or download the ZIP** from GitHub and extract it.
@@ -275,15 +311,17 @@ This runs both algorithms on a test puzzle and prints the solution and time to t
 
 ## 🕹️ How to Use — Step by Step
 
-1. **Select Difficulty** — Click `Easy`, `Medium`, or `Hard`
-2. **Select Puzzle Number** — Click `Puzzle 1`, `Puzzle 2`, `Puzzle 3`, or `Puzzle 4`
-3. **Select Algorithm** — Click `Backtracking` or `AC-3`
-4. **Click `LOAD PUZZLE`** — The board fills with the puzzle's given numbers
-5. **To solve automatically** — Click `⚡ SOLVE`. The board fills instantly and the time appears
-6. **To solve manually** — Click any empty cell (turns purple). Type a number 1–9. Press `Delete` or `Backspace` to clear
-7. **Need help?** — Click `💡 HINT`. One correct cell fills in green
-8. **Check your work** — Click `✓ CHECK`. Wrong cells turn red, correct ones stay as-is
-9. **Start over** — Click `↺ RESET` to wipe your entries and get the blank puzzle back
+1. Select a **difficulty** — Easy, Medium, or Hard
+2. Select a **puzzle number** — 1 through 4
+3. Select an **algorithm** — Backtracking or AC-3
+4. Click **LOAD PUZZLE** — the board populates with the given numbers
+5. **To auto-solve:** click `⚡ SOLVE` — the board fills and the time appears in the status bar and comparison panel
+6. **To play manually:** click any empty cell (it highlights with a blue border), then type a digit 1–9; use arrow keys to move between cells; press Delete or Backspace to clear
+7. **Need a nudge:** click `💡 HINT` — one correct cell fills in green and flashes three times
+8. **Validate:** click `✓ CHECK` — wrong cells turn red, correct ones are unchanged
+9. **Start fresh:** click `↺ RESET` — all your entries are cleared and the original puzzle is restored
+10. **Compare both algorithms:** click `⚡ RUN BOTH & COMPARE` in the right panel — both run sequentially, times appear in their respective cards, and the winner is announced
+
 
 ---
 
@@ -310,7 +348,6 @@ This runs both algorithms on a test puzzle and prints the solution and time to t
 ---
 
 ## 👤 Author
-|---|---|
 | **Name** | *(Ali Amir)* |
 | **Contact** | *(maliamir089@gmail.com)* |
 | **Institution** | NUCES Faisalabad-Chiniot Campus |
