@@ -1,21 +1,17 @@
 # datasets.py
 """
-==============================================
+==============================================================
   datasets.py — Sudoku Puzzle Dataset
-  Banaya gaya hai: 12 puzzles store karne ke liye
-  Easy = 1, Medium = 2, Hard = 3
-  Har difficulty mein 4 puzzles hain
-  0 ka matlab: empty cell (user fill karega)
-==============================================
+  12 puzzles store karne ke liye:
+  Easy = 4, Medium = 4, Hard = 4
+  0 = empty cell (user/algorithm fill karega)
+  get_puzzle(difficulty, number) se puzzle milta hai
+==============================================================
 """
 
-# Har puzzle ek 9x9 grid hai (list of lists)
-# 0 = empty cell
-
-# ── Easy Puzzles ──────────────────────────────────────────
+import copy
 
 EASY_PUZZLES = [
-
     # Easy Puzzle 1
     [
         [5, 3, 0, 0, 7, 0, 0, 0, 0],
@@ -28,7 +24,6 @@ EASY_PUZZLES = [
         [0, 0, 0, 4, 1, 9, 0, 0, 5],
         [0, 0, 0, 0, 8, 0, 0, 7, 9],
     ],
-
     # Easy Puzzle 2
     [
         [0, 0, 3, 0, 2, 0, 6, 0, 0],
@@ -41,7 +36,6 @@ EASY_PUZZLES = [
         [8, 0, 0, 2, 0, 3, 0, 0, 9],
         [0, 0, 5, 0, 1, 0, 3, 0, 0],
     ],
-
     # Easy Puzzle 3
     [
         [2, 0, 0, 3, 0, 0, 0, 0, 0],
@@ -54,7 +48,6 @@ EASY_PUZZLES = [
         [6, 0, 1, 2, 5, 0, 8, 0, 9],
         [0, 0, 0, 0, 0, 1, 0, 0, 2],
     ],
-
     # Easy Puzzle 4
     [
         [0, 0, 0, 2, 6, 0, 7, 0, 1],
@@ -69,10 +62,7 @@ EASY_PUZZLES = [
     ],
 ]
 
-# ── Medium Puzzles ────────────────────────────────────────
-
 MEDIUM_PUZZLES = [
-
     # Medium Puzzle 1
     [
         [0, 0, 0, 2, 0, 0, 0, 6, 3],
@@ -85,7 +75,6 @@ MEDIUM_PUZZLES = [
         [5, 0, 3, 7, 0, 0, 0, 0, 8],
         [4, 7, 0, 0, 0, 1, 0, 0, 0],
     ],
-
     # Medium Puzzle 2
     [
         [0, 0, 0, 0, 0, 0, 9, 0, 7],
@@ -98,7 +87,6 @@ MEDIUM_PUZZLES = [
         [0, 3, 4, 0, 5, 9, 0, 0, 0],
         [5, 0, 7, 0, 0, 0, 0, 0, 0],
     ],
-
     # Medium Puzzle 3
     [
         [0, 6, 0, 1, 0, 4, 0, 5, 0],
@@ -111,25 +99,21 @@ MEDIUM_PUZZLES = [
         [0, 0, 7, 2, 0, 6, 9, 0, 0],
         [0, 4, 0, 5, 0, 8, 0, 7, 0],
     ],
-
     # Medium Puzzle 4
     [
-        [0, 0, 6, 0, 0, 0, 0, 7, 0],
-        [0, 9, 0, 0, 4, 0, 6, 0, 0],
-        [0, 0, 0, 6, 9, 0, 0, 0, 0],
-        [5, 0, 0, 0, 0, 2, 0, 4, 0],
-        [0, 8, 0, 0, 5, 0, 0, 3, 0],
-        [0, 1, 0, 7, 0, 0, 0, 0, 6],
-        [0, 0, 0, 0, 8, 4, 0, 0, 0],
-        [0, 0, 2, 0, 3, 0, 0, 1, 0],
-        [0, 7, 0, 0, 0, 0, 4, 0, 0],
+        [0, 2, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 6, 0, 0, 0, 0, 3],
+        [0, 7, 4, 0, 8, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 3, 0, 0, 2],
+        [0, 8, 0, 0, 4, 0, 0, 1, 0],
+        [6, 0, 0, 5, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 7, 8, 0],
+        [5, 0, 0, 0, 0, 9, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 4, 0],
     ],
 ]
 
-# ── Hard Puzzles ──────────────────────────────────────────
-
 HARD_PUZZLES = [
-
     # Hard Puzzle 1
     [
         [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -142,7 +126,6 @@ HARD_PUZZLES = [
         [0, 0, 2, 0, 1, 0, 0, 0, 0],
         [0, 0, 0, 0, 4, 0, 0, 0, 9],
     ],
-
     # Hard Puzzle 2
     [
         [0, 0, 5, 3, 0, 0, 0, 0, 0],
@@ -155,7 +138,6 @@ HARD_PUZZLES = [
         [0, 0, 4, 0, 0, 0, 0, 3, 0],
         [0, 0, 0, 0, 0, 9, 7, 0, 0],
     ],
-
     # Hard Puzzle 3
     [
         [0, 0, 0, 0, 0, 0, 0, 1, 2],
@@ -168,7 +150,6 @@ HARD_PUZZLES = [
         [0, 8, 0, 0, 0, 0, 0, 4, 0],
         [0, 5, 0, 0, 0, 0, 6, 0, 0],
     ],
-
     # Hard Puzzle 4
     [
         [8, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -183,19 +164,16 @@ HARD_PUZZLES = [
     ],
 ]
 
-# ── Helper Function ───────────────────────────────────────
 
 def get_puzzle(difficulty, puzzle_number):
     """
     Puzzle return karo based on difficulty aur number.
     difficulty: 'easy', 'medium', 'hard'
     puzzle_number: 1 to 4
-    Returns: 9x9 grid (deep copy taake original change na ho)
+    Returns: 9x9 grid (deep copy taake original safe rahe)
     """
-    import copy
-
-    difficulty = difficulty.lower()
-    idx = puzzle_number - 1  # 0-indexed
+    difficulty = difficulty.lower().strip()
+    idx = puzzle_number - 1
 
     if difficulty == "easy":
         return copy.deepcopy(EASY_PUZZLES[idx])
@@ -204,4 +182,4 @@ def get_puzzle(difficulty, puzzle_number):
     elif difficulty == "hard":
         return copy.deepcopy(HARD_PUZZLES[idx])
     else:
-        raise ValueError(f"Invalid difficulty: {difficulty}. Use 'easy', 'medium', or 'hard'.")
+        raise ValueError(f"Invalid difficulty: {difficulty}")
