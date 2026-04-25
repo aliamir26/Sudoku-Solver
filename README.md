@@ -16,7 +16,7 @@ A Python-based Sudoku solver implementing two classic **Constraint Satisfaction 
 
 | Difficulty Selection | Time Display | Wrong Cell Check |
 |:---:|:---:|:---:|
-| (screenshots/difficulty.png) | (screenshots/timer.png) | (screenshots/wrong_cells.png) |
+| ![difficulty.png](https://github.com/aliamir26/Sudoku-Solver/blob/5b1eda9dca2566f3f51bae6807e34c242e88ff0e/screenshots/difficulty.png) | ![timer.png](https://github.com/aliamir26/Sudoku-Solver/blob/5b1eda9dca2566f3f51bae6807e34c242e88ff0e/screenshots/timer.png) | ![wrong_cells.png](https://github.com/aliamir26/Sudoku-Solver/blob/5b1eda9dca2566f3f51bae6807e34c242e88ff0e/screenshots/wrong_cells.png) |
 | *Easy / Medium / Hard radio buttons* | *Solve time to 6 decimal places* | *Red cells on wrong entries* |
 
 ---
