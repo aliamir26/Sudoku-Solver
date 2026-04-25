@@ -11,7 +11,7 @@ A Python-based Sudoku solver implementing two classic **Constraint Satisfaction 
 
 | Main Board | Solving in Progress | Hint System |
 |:---:|:---:|:---:|
-| (screenshots/main_board.png) | (screenshots/solving.png) | (screenshots/hint.png) |
+| ![main_board.png](https://github.com/aliamir26/Sudoku-Solver/blob/f98f29c9e1dbbc675ecb384bebdc55db79011def/screenshots/main_board.png) | ![solving.png](https://github.com/aliamir26/Sudoku-Solver/blob/f98f29c9e1dbbc675ecb384bebdc55db79011def/screenshots/solving.png) | ![screenshots/hint.png](https://github.com/aliamir26/Sudoku-Solver/blob/f98f29c9e1dbbc675ecb384bebdc55db79011def/screenshots/hint.png) |
 | *Default view on launch* | *Algorithm solving live* | *Hint cell glowing green* |
 
 | Difficulty Selection | Time Display | Wrong Cell Check |
