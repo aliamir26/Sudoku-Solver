@@ -3,9 +3,10 @@
 ==============================================================
   csp_solver.py — AC-3 aur Backtracking Algorithms
   Yeh file Sudoku ko solve karti hai do tareeqon se:
-  1. AC-3 (Arc Consistency 3) — domain reduction
+  1. AC-3 (Arc Consistency 3) — domain reduction + backtracking fallback
   2. Backtracking Search — recursive trial and error
   Dono ka time bhi measure hota hai yahan
+  FIX: AC-3 ab properly kaam karta hai with full backtracking fallback
 ==============================================================
 """
 
@@ -15,7 +16,7 @@ from collections import deque
 
 
 # ─────────────────────────────────────────────
-#  HELPER FUNCTIONS — dono algorithms use karte hain
+#  HELPER FUNCTIONS
 # ─────────────────────────────────────────────
 
 def get_peers(row, col):
@@ -25,17 +26,17 @@ def get_peers(row, col):
     """
     peers = set()
 
-    # Same row ke saare cells
+    # Same row
     for c in range(9):
         if c != col:
             peers.add((row, c))
 
-    # Same column ke saare cells
+    # Same column
     for r in range(9):
         if r != row:
             peers.add((r, col))
 
-    # Same 3x3 box ke saare cells
+    # Same 3x3 box
     box_row = (row // 3) * 3
     box_col = (col // 3) * 3
     for r in range(box_row, box_row + 3):
@@ -46,11 +47,15 @@ def get_peers(row, col):
     return peers
 
 
+# Pre-compute all peers for efficiency
+ALL_PEERS = {(r, c): get_peers(r, c) for r in range(9) for c in range(9)}
+
+
 def build_domains(grid):
     """
-    Har cell ka domain banao.
-    Agar cell filled hai: domain = {us value}
-    Agar empty hai (0): domain = {1,2,3,4,5,6,7,8,9}
+    Har cell ka starting domain banao.
+    Filled cell ka domain = {us value}.
+    Empty cell (0) ka domain = {1..9} minus jo values peers mein hain.
     """
     domains = {}
     for r in range(9):
@@ -58,22 +63,29 @@ def build_domains(grid):
             if grid[r][c] != 0:
                 domains[(r, c)] = {grid[r][c]}
             else:
-                domains[(r, c)] = set(range(1, 10))
+                # Start with all values, remove those already used by peers
+                used = set()
+                for (pr, pc) in ALL_PEERS[(r, c)]:
+                    if grid[pr][pc] != 0:
+                        used.add(grid[pr][pc])
+                domains[(r, c)] = set(range(1, 10)) - used
     return domains
 
 
 def is_valid(grid, row, col, num):
     """
     Check karo ke num ko (row, col) mein rakh sakte hain ya nahi.
-    Backtracking ke liye use hota hai.
+    Row, col, aur 3x3 box check karta hai.
     """
     # Row check
-    if num in grid[row]:
-        return False
+    for c in range(9):
+        if grid[row][c] == num:
+            return False
 
     # Column check
-    if num in [grid[r][col] for r in range(9)]:
-        return False
+    for r in range(9):
+        if grid[r][col] == num:
+            return False
 
     # 3x3 box check
     box_row = (row // 3) * 3
@@ -88,100 +100,36 @@ def is_valid(grid, row, col, num):
 
 def find_empty(grid):
     """
-    Pehli empty cell (value=0) dhundo aur return karo.
-    Agar koi empty nahi: None return karo (puzzle solved!).
+    MRV heuristic — sabse kam options wali empty cell dhundo.
+    Yeh backtracking ko faster banata hai.
     """
+    min_options = 10
+    best_cell = None
+
     for r in range(9):
         for c in range(9):
             if grid[r][c] == 0:
-                return (r, c)
-    return None
+                # Count how many valid numbers can go here
+                count = 0
+                for num in range(1, 10):
+                    if is_valid(grid, r, c, num):
+                        count += 1
+                if count < min_options:
+                    min_options = count
+                    best_cell = (r, c)
+                    if count == 1:
+                        return best_cell  # Can't do better than 1
+
+    return best_cell
 
 
-# ─────────────────────────────────────────────
-#  AC-3 ALGORITHM
-# ─────────────────────────────────────────────
-
-def revise(domains, xi, xj):
-    """
-    REVISE function — AIMA book se liya gaya.
-    Xi ka domain revise karo Xj ke against.
-    Agar koi value x in Di ke liye koi valid y Di mein nahi:
-    toh x ko Di se hata do.
-    Returns True agar domain change hua.
-    """
-    revised = False
-
-    # Xi ke domain ki har value check karo
-    for x in set(domains[xi]):
-        # Kya Xj mein koi y hai jo x se alag ho?
-        # Sudoku constraint: xi != xj
-        if domains[xj] == {x}:
-            # Sirf ek value hai Xj mein aur woh x ke barabar hai
-            # Toh x Xi ke liye invalid hai
-            domains[xi].discard(x)
-            revised = True
-
-    return revised
-
-
-def ac3(grid):
-    """
-    AC-3 Algorithm — AIMA book se liya gaya.
-    Saare arcs ko queue mein daalo aur process karo.
-    Returns: (solved_grid or None, time_taken)
-    """
-    start_time = time.time()
-
-    # Deep copy taake original grid safe rahe
-    grid = copy.deepcopy(grid)
-
-    # Domains banao
-    domains = build_domains(grid)
-
-    # Queue mein saare arcs daalo (Xi, Xj) jahan Xi aur Xj peers hain
-    queue = deque()
+def grid_is_complete(grid):
+    """Check karo ke koi empty cell bacha hai ya nahi."""
     for r in range(9):
         for c in range(9):
-            for (pr, pc) in get_peers(r, c):
-                queue.append(((r, c), (pr, pc)))
-
-    # AC-3 main loop
-    while queue:
-        (xi, xj) = queue.popleft()
-
-        if revise(domains, xi, xj):
-            # Agar domain empty ho gaya: inconsistency!
-            if len(domains[xi]) == 0:
-                end_time = time.time()
-                return None, round(end_time - start_time, 6)
-
-            # Xi ke saare neighbors ko dobara queue mein daalo (Xj ko chod ke)
-            for neighbor in get_peers(xi[0], xi[1]):
-                if neighbor != xj:
-                    queue.append((neighbor, xi))
-
-    # Domains se grid banao
-    result_grid = [[0] * 9 for _ in range(9)]
-    for r in range(9):
-        for c in range(9):
-            if len(domains[(r, c)]) == 1:
-                result_grid[r][c] = list(domains[(r, c)])[0]
-            else:
-                # AC-3 akela solve nahi kar saka
-                # Backtracking se complete karo
-                result_grid[r][c] = grid[r][c]
-
-    # Agar abhi bhi empty cells hain toh backtracking se finish karo
-    if any(result_grid[r][c] == 0 for r in range(9) for c in range(9)):
-        result_grid = _backtrack(result_grid)
-
-    end_time = time.time()
-    time_taken = round(end_time - start_time, 6)
-
-    if result_grid:
-        return result_grid, time_taken
-    return None, time_taken
+            if grid[r][c] == 0:
+                return False
+    return True
 
 
 # ─────────────────────────────────────────────
@@ -190,53 +138,224 @@ def ac3(grid):
 
 def _backtrack(grid):
     """
-    Internal recursive backtracking function.
-    AIMA BACKTRACK function ka Python version.
+    Internal recursive backtracking.
+    MRV heuristic use karta hai next cell select karne ke liye.
     """
-    # Base case: koi empty cell nahi = solution mil gaya
+    # Koi empty cell nahi = puzzle solved!
     empty = find_empty(grid)
     if empty is None:
         return grid
 
     row, col = empty
 
-    # 1 se 9 tak har value try karo
+    # 1-9 mein se har value try karo
     for num in range(1, 10):
         if is_valid(grid, row, col, num):
-            grid[row][col] = num  # Value assign karo
+            grid[row][col] = num
 
-            result = _backtrack(grid)  # Recursion
+            result = _backtrack(grid)
 
             if result is not None:
-                return result  # Solution mil gaya!
+                return result
 
-            grid[row][col] = 0  # Backtrack — galat tha
+            grid[row][col] = 0  # Backtrack
 
-    return None  # Koi solution nahi mila is path mein
+    return None  # Koi solution nahi mila is path se
 
 
 def backtracking(grid):
     """
-    Public Backtracking function — GUI yahi call karegi.
-    Returns: (solved_grid or None, time_taken)
+    Public Backtracking function.
+    Returns: (solved_grid, time_taken_seconds)
     """
-    start_time = time.time()
+    start_time = time.perf_counter()
 
     grid_copy = copy.deepcopy(grid)
     result = _backtrack(grid_copy)
 
-    end_time = time.time()
-    time_taken = round(end_time - start_time, 6)
+    end_time = time.perf_counter()
+    time_taken = end_time - start_time
 
     return result, time_taken
 
 
 # ─────────────────────────────────────────────
-#  QUICK TEST — direct run karo check ke liye
+#  AC-3 ALGORITHM
+# ─────────────────────────────────────────────
+
+def _revise(domains, xi, xj):
+    """
+    REVISE — Xi ka domain revise karo Xj ke according.
+    Agar Xi ki koi value x ke liye Xj mein koi different value y nahi:
+    toh x ko Xi ke domain se hatao.
+    Returns True agar domain change hua.
+    """
+    revised = False
+
+    for x in set(domains[xi]):  # copy taake iteration safe ho
+        # Sudoku constraint: xi != xj
+        # Agar Xj ka domain sirf {x} hai, toh x Xi ke liye invalid hai
+        if domains[xj] == {x}:
+            domains[xi].discard(x)
+            revised = True
+
+    return revised
+
+
+def _ac3_reduce(domains):
+    """
+    Pure AC-3 reduction.
+    Returns True agar consistent, False agar koi domain empty ho gaya.
+    """
+    # Saare arcs queue mein daalo
+    queue = deque()
+    for r in range(9):
+        for c in range(9):
+            for (pr, pc) in ALL_PEERS[(r, c)]:
+                queue.append(((r, c), (pr, pc)))
+
+    while queue:
+        (xi, xj) = queue.popleft()
+
+        if _revise(domains, xi, xj):
+            if len(domains[xi]) == 0:
+                return False  # Inconsistency!
+
+            # Xi ke saare neighbors ko re-check karo (Xj chod ke)
+            for neighbor in ALL_PEERS[xi[0], xi[1]]:
+                if neighbor != xj:
+                    queue.append((neighbor, xi))
+
+    return True
+
+
+def _domains_to_grid(domains, original_grid):
+    """
+    Domains se grid banao.
+    Sirf woh cells fill karo jinka domain size = 1.
+    """
+    grid = copy.deepcopy(original_grid)
+    for r in range(9):
+        for c in range(9):
+            if len(domains[(r, c)]) == 1:
+                grid[r][c] = list(domains[(r, c)])[0]
+    return grid
+
+
+def _ac3_backtrack(grid, domains):
+    """
+    AC-3 ke baad remaining cells ke liye backtracking.
+    Domain-aware hai — sirf valid values try karta hai.
+    """
+    # Sabse pehle empty cell dhundo (MRV: min remaining values)
+    min_len = 10
+    empty = None
+    for r in range(9):
+        for c in range(9):
+            if grid[r][c] == 0:
+                d_len = len(domains[(r, c)])
+                if d_len < min_len:
+                    min_len = d_len
+                    empty = (r, c)
+                    if d_len == 1:
+                        break
+
+    if empty is None:
+        return grid  # Solved!
+
+    row, col = empty
+
+    # Domain ki values try karo
+    for num in sorted(domains[(row, col)]):
+        if is_valid(grid, row, col, num):
+            grid[row][col] = num
+
+            # Domains ka backup banao aur update karo
+            new_domains = copy.deepcopy(domains)
+            new_domains[(row, col)] = {num}
+
+            # Neighbors ke domains update karo
+            consistent = True
+            for (nr, nc) in ALL_PEERS[(row, col)]:
+                new_domains[(nr, nc)].discard(num)
+                if len(new_domains[(nr, nc)]) == 0 and grid[nr][nc] == 0:
+                    consistent = False
+                    break
+
+            if consistent:
+                result = _ac3_backtrack(grid, new_domains)
+                if result is not None:
+                    return result
+
+            grid[row][col] = 0  # Backtrack
+
+    return None
+
+
+def ac3(grid):
+    """
+    Public AC-3 function.
+    Step 1: Domain reduction via arc consistency.
+    Step 2: Backtracking on remaining empty cells using reduced domains.
+    Returns: (solved_grid, time_taken_seconds)
+    """
+    start_time = time.perf_counter()
+
+    grid_copy = copy.deepcopy(grid)
+
+    # Build initial domains
+    domains = build_domains(grid_copy)
+
+    # Run AC-3 reduction
+    if not _ac3_reduce(domains):
+        end_time = time.perf_counter()
+        return None, end_time - start_time
+
+    # Domains se grid update karo
+    for r in range(9):
+        for c in range(9):
+            if len(domains[(r, c)]) == 1:
+                grid_copy[r][c] = list(domains[(r, c)])[0]
+
+    # Check karo ke already solved hua ya nahi
+    if grid_is_complete(grid_copy):
+        end_time = time.perf_counter()
+        return grid_copy, end_time - start_time
+
+    # Agar abhi bhi empty cells hain: backtrack karo domain knowledge ke saath
+    result = _ac3_backtrack(grid_copy, domains)
+
+    end_time = time.perf_counter()
+    time_taken = end_time - start_time
+
+    return result, time_taken
+
+
+# ─────────────────────────────────────────────
+#  TIME FORMATTING UTILITY
+# ─────────────────────────────────────────────
+
+def format_time(seconds):
+    """
+    Time ko human-readable format mein convert karo.
+    seconds → microseconds, milliseconds, ya seconds display karo.
+    """
+    if seconds < 0.001:
+        # Microseconds
+        return f"{seconds * 1_000_000:.1f} μs"
+    elif seconds < 1.0:
+        # Milliseconds
+        return f"{seconds * 1000:.3f} ms"
+    else:
+        # Seconds
+        return f"{seconds:.4f} s"
+
+
+# ─────────────────────────────────────────────
+#  QUICK TEST — python csp_solver.py chalao
 # ─────────────────────────────────────────────
 
 if __name__ == "__main__":
-    # Simple test puzzle
     test_grid = [
         [5, 3, 0, 0, 7, 0, 0, 0, 0],
         [6, 0, 0, 1, 9, 5, 0, 0, 0],
@@ -249,14 +368,25 @@ if __name__ == "__main__":
         [0, 0, 0, 0, 8, 0, 0, 7, 9],
     ]
 
-    print("Testing Backtracking...")
+    print("=" * 50)
+    print("BACKTRACKING TEST")
+    print("=" * 50)
     sol, t = backtracking(test_grid)
-    print(f"Solved in {t} seconds")
-    for row in sol:
-        print(row)
+    if sol:
+        for row in sol:
+            print(row)
+        print(f"Time: {format_time(t)}")
+    else:
+        print("No solution found!")
 
-    print("\nTesting AC-3...")
+    print()
+    print("=" * 50)
+    print("AC-3 TEST")
+    print("=" * 50)
     sol2, t2 = ac3(test_grid)
-    print(f"Solved in {t2} seconds")
-    for row in sol2:
-        print(row)
+    if sol2:
+        for row in sol2:
+            print(row)
+        print(f"Time: {format_time(t2)}")
+    else:
+        print("No solution found!")
