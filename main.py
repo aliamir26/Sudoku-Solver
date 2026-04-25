@@ -2,12 +2,10 @@
 """
 ==============================================================
   main.py — Entry Point
-  Yahan se poori app start hoti hai.
-  Sab files yahan aakar milti hain:
-    datasets.py  → puzzles data
-    csp_solver.py → AC-3 + Backtracking
-    hint.py      → hint system
-    gui.py       → visual interface
+  Poori app yahan se start hoti hai.
+  Imports:
+    gui.py       → SudokuApp (visual interface)
+    gui.py imports datasets, csp_solver, hint automatically
   Run karo: python main.py
 ==============================================================
 """
@@ -17,25 +15,23 @@ from gui import SudokuApp
 
 
 def main():
-    """App start karo — Tkinter window launch karo."""
+    """App launch karo — window banao aur center karo screen par."""
     root = tk.Tk()
 
-    # Window ko screen center mein rakh do
-    window_width  = 520
-    window_height = 720
+    # Window dimensions — big enough for board + side panel
+    W = 1020   # width
+    H = 780    # height
 
-    screen_width  = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
+    # Center on screen
+    sw = root.winfo_screenwidth()
+    sh = root.winfo_screenheight()
+    x  = (sw - W) // 2
+    y  = (sh - H) // 2
+    root.geometry(f"{W}x{H}+{x}+{y}")
+    root.minsize(900, 700)
 
-    x = (screen_width  // 2) - (window_width  // 2)
-    y = (screen_height // 2) - (window_height // 2)
-
-    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-
-    # App launch karo
-    app = SudokuApp(root)
-
-    # Window loop start karo
+    # Launch app
+    SudokuApp(root)
     root.mainloop()
 
 
